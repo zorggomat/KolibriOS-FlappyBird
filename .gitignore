@@ -1,0 +1,10 @@
+*.user
+*.log
+*.tlog
+*.obj
+*.lastbuildstate
+*.pdb
+*.exe
+*.map
+*.FileListAbsolute.txt
+.vs/
