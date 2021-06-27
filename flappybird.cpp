@@ -11,6 +11,7 @@ struct Tube
 const char header[] = "Flappy bird";
 const char controlString[] = "SPACEBAR TO JUMP";
 const char gameOverString[] = "GAMEOVER";
+const char anyKeyString[] = "Press any key for restart";
 const int windowWidth = 400;
 const int windowHeight = 400;
 const int tubeWidth = 50;
@@ -159,8 +160,8 @@ void draw_game_window()
 	}
 
 	// display string
-	kos_WriteTextToWindow(10, 10, 0x80, 0x000000, scoreString, 0);
-	kos_WriteTextToWindow(10, 30, 0x80, 0x000000, controlString, 0);
+	kos_WriteTextToWindow(10, 10, 0x81, 0x000000, scoreString, 0);
+	kos_WriteTextToWindow(10, 30, 0x81, 0x000000, controlString, 0);
 
 	// end redraw
 	kos_WindowRedrawStatus(2);
@@ -170,7 +171,9 @@ void draw_gameover_window()
 {
 	kos_WindowRedrawStatus(1);
 	kos_DefineAndDrawWindow(10, 40, windowWidth, windowHeight, 0x33, 0x000000, 0, 0, (Dword)header);
-	kos_WriteTextToWindow(50, 50, 0x80, 0xFFFFFF, gameOverString, 0);
+	kos_WriteTextToWindow(125, 50, 0x82, 0xFFFFFF, gameOverString, 0);
+	kos_WriteTextToWindow(135, 100, 0x81, 0xFFFFFF, scoreString, 0);
+	kos_WriteTextToWindow(50, 150, 0x081, 0xFFFFFF, anyKeyString, 0);
 	kos_WindowRedrawStatus(2);
 }
 
