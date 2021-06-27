@@ -1,5 +1,6 @@
 #include <kosSyst.h>
 #include <kosFile.h>
+#include "images.hpp"
 
 struct Tube
 {
@@ -16,7 +17,8 @@ const int windowWidth = 400;
 const int windowHeight = 400;
 const int tubeWidth = 50;
 const int tubeGapHeight = 100;
-const int birdSize = 10;
+const int birdSizeX = 17;
+const int birdSizeY = 12;
 const int birdX = 100;
 
 //Global variables
@@ -96,7 +98,7 @@ void kos_Main()
 					tubes[i] = generateTube();
 			}
 
-			if (birdY + birdSize > windowHeight || birdY < 0)
+			if (birdY + birdSizeY > windowHeight || birdY < 0)
 			{
 				gameStarted = false;
 				continue;
@@ -150,7 +152,8 @@ void draw_game_window()
 	kos_DefineAndDrawWindow(10, 40, windowWidth, windowHeight, 0x33, 0x00FFFF, 0, 0, (Dword)header);
 
 	// display bird
-	kos_DrawBar(birdX, birdY, birdSize, birdSize, 0x000000);
+	//kos_DrawBar(birdX, birdY, birdSizeX, birdSizeY, 0x000000);
+	kos_PutImage(birdImage, birdSizeX, birdSizeY, birdX, birdY);
 
 	// display tubes
 	for (int i = 0; i < tubeNumber; ++i)
@@ -187,9 +190,9 @@ Tube generateTube()
 
 inline bool checkCollision(Tube tube)
 {
-	if ( tube.x <= ( birdX + birdSize ) && tube.x + tubeWidth >= birdX)
+	if ( tube.x <= ( birdX + birdSizeX ) && tube.x + tubeWidth >= birdX )
 	{
-		if ( birdY <= tube.gapY || birdY + birdSize >= tube.gapY + tubeGapHeight)
+		if ( birdY <= tube.gapY || birdY + birdSizeY >= tube.gapY + tubeGapHeight)
 		{
 			return true;
 		}
