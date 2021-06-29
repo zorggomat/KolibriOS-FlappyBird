@@ -17,6 +17,7 @@ const int windowWidth = 400;
 const int windowHeight = 400;
 const int tubeWidth = 50;
 const int tubeGapHeight = 100;
+const int tubeHeadHeight = 18;
 const int birdSizeX = 17;
 const int birdSizeY = 12;
 const int birdX = 100;
@@ -158,8 +159,20 @@ void draw_game_window()
 	// display tubes
 	for (int i = 0; i < tubeNumber; ++i)
 	{
-		kos_DrawBar((tubes[i].x >= 0 ? tubes[i].x : 0), 0, ((tubes[i].x >= 0 ? tubeWidth : tubeWidth + tubes[i].x)), tubes[i].gapY, 0x00FF00);
-		kos_DrawBar((tubes[i].x >= 0 ? tubes[i].x : 0), tubes[i].gapY + tubeGapHeight, ((tubes[i].x >= 0 ? tubeWidth : tubeWidth + tubes[i].x)), windowHeight - tubeGapHeight - tubes[i].gapY, 0x00FF00);
+		int offset = tubes[i].x >= 0 ? 0 : -tubes[i].x;
+
+		//top
+		for (int y = 0; y < tubes[i].gapY - tubeHeadHeight; ++y)
+			kos_PutImage(tubeBodyImage + offset, tubeWidth - offset, 1, tubes[i].x + offset, y);
+		//head top
+		for (int y = tubes[i].gapY - tubeHeadHeight; y < tubes[i].gapY - tubeHeadHeight + tubeHeadHeight; ++y)
+			kos_PutImage(tubeHeadImage + tubeWidth * (y - (tubes[i].gapY - tubeHeadHeight)) + offset, tubeWidth - offset, 1, tubes[i].x + offset, y);
+		//head down
+		for (int y = tubes[i].gapY + tubeGapHeight; y < tubes[i].gapY + tubeGapHeight + tubeHeadHeight; ++y)
+			kos_PutImage(tubeHeadImage + tubeWidth * (y - (tubes[i].gapY + tubeGapHeight)) + offset, tubeWidth - offset, 1, tubes[i].x + offset, y);
+		//down
+		for (int y = tubes[i].gapY + tubeGapHeight + tubeHeadHeight; y < windowHeight; ++y)
+			kos_PutImage(tubeBodyImage + offset, tubeWidth - offset, 1, tubes[i].x + offset, y);
 	}
 
 	// display string
