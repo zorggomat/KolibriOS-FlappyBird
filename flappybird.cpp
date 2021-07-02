@@ -17,6 +17,7 @@ public:
 	static const int sizeX = 17;
 	static const int sizeY = 12;
 	static const int x = 100;
+	int prev_y;
 	int y;
 	int acceleration;
 
@@ -24,6 +25,7 @@ public:
 	{
 		if (acceleration <= 30)
 			acceleration += 2;
+		prev_y = y;
 		y += acceleration / 10;
 	}
 
@@ -56,7 +58,7 @@ public:
 	inline void move()
 	{
 		x -= 2;
-		if (x < -50)
+		if (x < -width - 2)
 			randomize();
 	}
 
@@ -69,19 +71,21 @@ public:
 			kos_PutImage(tubeBodyImage + offset, width - offset, 1, x + offset, y);
 		//head top
 		for (int y = gapY - headHeight; y < gapY; ++y)
-			kos_PutImage(tubeHeadImage + width * (y - (gapY - headHeight)) + offset, width - offset, 1, x + offset, y);
+			kos_PutImage(tubeHeadImage + (width + 2) * (y - (gapY - headHeight)) + offset, (width + 2) - offset, 1, x + offset, y);
 		//head down
 		for (int y = gapY + gapHeight; y < gapY + gapHeight + headHeight; ++y)
-			kos_PutImage(tubeHeadImage + width * (y - (gapY + gapHeight)) + offset, width - offset, 1, x + offset, y);
+			kos_PutImage(tubeHeadImage + (width + 2) * (y - (gapY + gapHeight)) + offset, (width + 2) - offset, 1, x + offset, y);
 		//down
 		for (int y = gapY + gapHeight + headHeight; y < windowHeight; ++y)
 			kos_PutImage(tubeBodyImage + offset, width - offset, 1, x + offset, y);
+
 	}
 };
 
 //Global variables
 bool gameStarted = false;
 char scoreString[] = "Score:    ";
+bool scoreChanged;
 int score;
 Bird bird;
 int tubeNumber;
@@ -89,7 +93,8 @@ Tube tubes[3];
 
 //Function prototypes
 void kos_Main();
-void drawGameWindow(); 
+void drawGameWindow();
+void redrawGameWindow();
 void drawGameoverWindow();
 void startGame();
 inline bool checkAddScore(Tube tube);
@@ -107,6 +112,7 @@ void startGame()
 	tubeNumber = 1;
 	tubes[0].randomize();
 	gameStarted = true;
+	drawGameWindow();
 }
 
 void kos_Main()
@@ -127,7 +133,7 @@ void kos_Main()
 				tubes[tubeNumber++].randomize();
 
 			//Process all tubes
-			bool scoreChanged = false;
+			scoreChanged = false;
 			for (int i = 0; i < tubeNumber; ++i)
 			{
 				//Adding score
@@ -156,7 +162,8 @@ void kos_Main()
 				gameStarted = false;
 				continue;
 			}
-			drawGameWindow();
+
+			redrawGameWindow();
 
 			switch (kos_CheckForEvent())
 			{
@@ -203,6 +210,25 @@ void drawGameWindow()
 	bird.draw();
 	for (int i = 0; i < tubeNumber; ++i)
 		tubes[i].draw();
+	kos_WriteTextToWindow(10, 10, 0x81, 0x000000, scoreString, 0);
+	kos_WriteTextToWindow(10, 30, 0x81, 0x000000, controlString, 0);
+	kos_WindowRedrawStatus(2);
+}
+void redrawGameWindow()
+{
+	kos_WindowRedrawStatus(1);
+	if (scoreChanged)
+		kos_DrawBar(80, 10, 50, 15, 0x00FFFF);
+
+	if (bird.y > bird.prev_y)
+		kos_DrawBar(bird.x, bird.prev_y, bird.sizeX, bird.y - bird.prev_y, 0x00FFFF);
+	else
+		kos_DrawBar(bird.x, bird.y + bird.sizeY, bird.sizeX, bird.prev_y - bird.y, 0x00FFFF);
+
+	bird.draw();
+	for (int i = 0; i < tubeNumber; ++i)
+		tubes[i].draw();
+
 	kos_WriteTextToWindow(10, 10, 0x81, 0x000000, scoreString, 0);
 	kos_WriteTextToWindow(10, 30, 0x81, 0x000000, controlString, 0);
 	kos_WindowRedrawStatus(2);
