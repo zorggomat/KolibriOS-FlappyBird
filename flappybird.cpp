@@ -11,6 +11,12 @@ const int windowWidth = 400;
 const int windowHeight = 400;
 const int loopDelay = 1;
 
+struct ScreenSize
+{
+	int width;
+	int height;
+};
+
 class Bird
 {
 public:
@@ -90,6 +96,8 @@ int score;
 Bird bird;
 int tubeNumber;
 Tube tubes[3];
+int windowX;
+int windowY;
 
 //Function prototypes
 void kos_Main();
@@ -97,6 +105,7 @@ void drawGameWindow();
 void redrawGameWindow();
 void drawGameoverWindow();
 void startGame();
+ScreenSize getScreenSize();
 inline bool checkAddScore(Tube tube);
 inline bool checkCollision(Tube tube);
 inline void updateScoreString();
@@ -115,9 +124,28 @@ void startGame()
 	drawGameWindow();
 }
 
+ScreenSize getScreenSize()
+{
+	Dword result;
+	__asm {
+		push 14
+		pop eax
+		int 0x40
+		mov result, eax
+	}
+	ScreenSize screenSize;
+	screenSize.height = (result & 0xFFFF) + 1;
+	screenSize.width = (result >> 16) + 1;
+	return screenSize;
+}
+
 void kos_Main()
 {
 	rtlSrand( kos_GetSystemClock() );
+
+	ScreenSize screenSize = getScreenSize();
+	windowX = (screenSize.width - windowWidth) / 2;
+	windowY = (screenSize.height - windowHeight) / 2;
 
 	startGame();
 
@@ -206,7 +234,7 @@ void kos_Main()
 void drawGameWindow()
 {
 	kos_WindowRedrawStatus(1);
-	kos_DefineAndDrawWindow(10, 40, windowWidth, windowHeight, 0x33, 0x00FFFF, 0, 0, (Dword)header);
+	kos_DefineAndDrawWindow(windowX, windowY, windowWidth, windowHeight, 0x33, 0x00FFFF, 0, 0, (Dword)header);
 	bird.draw();
 	for (int i = 0; i < tubeNumber; ++i)
 		tubes[i].draw();
@@ -237,7 +265,7 @@ void redrawGameWindow()
 void drawGameoverWindow()
 {
 	kos_WindowRedrawStatus(1);
-	kos_DefineAndDrawWindow(10, 40, windowWidth, windowHeight, 0x33, 0x000000, 0, 0, (Dword)header);
+	kos_DefineAndDrawWindow(windowX, windowY, windowWidth, windowHeight, 0x33, 0x000000, 0, 0, (Dword)header);
 	kos_WriteTextToWindow(125, 50, 0x82, 0xFFFFFF, gameOverString, 0);
 	kos_WriteTextToWindow(135, 100, 0x81, 0xFFFFFF, scoreString, 0);
 	kos_WriteTextToWindow(50, 150, 0x081, 0xFFFFFF, anyKeyString, 0);
