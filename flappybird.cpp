@@ -71,19 +71,21 @@ public:
 	void draw()
 	{
 		int offset = x >= 0 ? 0 : -x;
+		int trim = x + width >= windowWidth - 9 ? windowWidth - 9 - x - width : 0;
+		int trimHead = x + width + 2 >= windowWidth - 9 ? windowWidth - 11 - x - width : 0;
 
 		//top
 		for (int y = 0; y < gapY - headHeight; ++y)
-			kos_PutImage(tubeBodyImage + offset, width - offset, 1, x + offset, y);
+			kos_PutImage(tubeBodyImage + offset, width - offset + trim, 1, x + offset, y);
 		//head top
 		for (int y = gapY - headHeight; y < gapY; ++y)
-			kos_PutImage(tubeHeadImage + (width + 2) * (y - (gapY - headHeight)) + offset, (width + 2) - offset, 1, x + offset, y);
+			kos_PutImage(tubeHeadImage + (width + 2) * (y - (gapY - headHeight)) + offset, (width + 2) - offset + trimHead, 1, x + offset, y);
 		//head down
 		for (int y = gapY + gapHeight; y < gapY + gapHeight + headHeight; ++y)
-			kos_PutImage(tubeHeadImage + (width + 2) * (y - (gapY + gapHeight)) + offset, (width + 2) - offset, 1, x + offset, y);
+			kos_PutImage(tubeHeadImage + (width + 2) * (y - (gapY + gapHeight)) + offset, (width + 2) - offset + trimHead, 1, x + offset, y);
 		//down
-		for (int y = gapY + gapHeight + headHeight; y < windowHeight; ++y)
-			kos_PutImage(tubeBodyImage + offset, width - offset, 1, x + offset, y);
+		for (int y = gapY + gapHeight + headHeight; y < windowHeight - 28; ++y)
+			kos_PutImage(tubeBodyImage + offset, width - offset + trim, 1, x + offset, y);
 
 	}
 };
