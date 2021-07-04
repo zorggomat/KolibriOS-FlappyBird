@@ -3,13 +3,13 @@
 #include "images.hpp"
 
 //Global const variables
-const char header[] = "Flappy bird";
-const char controlString[] = "SPACEBAR TO JUMP";
-const char gameOverString[] = "GAMEOVER";
-const char anyKeyString[] = "Press any key for restart";
-const int windowWidth = 400;
-const int windowHeight = 400;
-const int loopDelay = 1;
+const char HEADER_STRING[] = "Flappy bird";
+const char CONTROL_STRING[] = "SPACEBAR TO JUMP";
+const char GAMEOVER_STRING[] = "GAMEOVER";
+const char ANY_KEY_STRING[] = "Press any key for restart";
+const int WINDOW_WIDTH = 400;
+const int WINDOW_HEIGHT = 400;
+const int LOOP_DELAY = 1;
 
 struct ScreenSize
 {
@@ -27,6 +27,12 @@ public:
 	int y;
 	int acceleration;
 
+	inline void initialize()
+	{
+		y = WINDOW_HEIGHT / 2;
+		acceleration = 0;
+	}
+
 	inline void move()
 	{
 		if (acceleration <= 30)
@@ -40,7 +46,7 @@ public:
 		acceleration = -50;
 	}
 
-	void draw()
+	inline void draw()
 	{
 		kos_PutImage(birdImage, sizeX, sizeY, x, y);
 	}
@@ -57,7 +63,7 @@ public:
 
 	inline void randomize()
 	{
-		x = windowWidth + 1;
+		x = WINDOW_WIDTH + 1;
 		gapY = rtlRand() % 200 + 50;
 	}
 
@@ -71,8 +77,8 @@ public:
 	void draw()
 	{
 		int offset = x >= 0 ? 0 : -x;
-		int trim = x + width >= windowWidth - 9 ? windowWidth - 9 - x - width : 0;
-		int trimHead = x + width + 2 >= windowWidth - 9 ? windowWidth - 11 - x - width : 0;
+		int trim = x + width >= WINDOW_WIDTH - 9 ? WINDOW_WIDTH - 9 - x - width : 0;
+		int trimHead = x + width + 2 >= WINDOW_WIDTH - 9 ? WINDOW_WIDTH - 11 - x - width : 0;
 
 		//top
 		for (int y = 0; y < gapY - headHeight; ++y)
@@ -84,7 +90,7 @@ public:
 		for (int y = gapY + gapHeight; y < gapY + gapHeight + headHeight; ++y)
 			kos_PutImage(tubeHeadImage + (width + 2) * (y - (gapY + gapHeight)) + offset, (width + 2) - offset + trimHead, 1, x + offset, y);
 		//down
-		for (int y = gapY + gapHeight + headHeight; y < windowHeight - 28; ++y)
+		for (int y = gapY + gapHeight + headHeight; y < WINDOW_HEIGHT - 28; ++y)
 			kos_PutImage(tubeBodyImage + offset, width - offset + trim, 1, x + offset, y);
 
 	}
@@ -116,13 +122,15 @@ inline bool checkCollision(Tube tube);
 
 void startGame()
 {
-	bird.y = windowHeight / 2;
-	bird.acceleration = 0;
+	bird.initialize();
+
 	score = 0;
 	memset((Byte*)scoreString + 6, ' ', 3);
 	updateScoreString();
+
 	tubeNumber = 1;
 	tubes[0].randomize();
+
 	gameStarted = true;
 	drawGameWindow();
 }
@@ -131,14 +139,14 @@ ScreenSize getScreenSize()
 {
 	Dword result;
 	__asm {
-		push 14
+		push 14		//System function 14
 		pop eax
 		int 0x40
 		mov result, eax
 	}
 	ScreenSize screenSize;
-	screenSize.height = (result & 0xFFFF) + 1;
-	screenSize.width = (result >> 16) + 1;
+	screenSize.height = (result & 0xFFFF) + 1;	//last two bytes
+	screenSize.width = (result >> 16) + 1;		//first two bytes
 	return screenSize;
 }
 
@@ -146,9 +154,10 @@ void kos_Main()
 {
 	rtlSrand( kos_GetSystemClock() );
 
+	//Centring window
 	ScreenSize screenSize = getScreenSize();
-	windowX = (screenSize.width - windowWidth) / 2;
-	windowY = (screenSize.height - windowHeight) / 2;
+	windowX = (screenSize.width - WINDOW_WIDTH) / 2;
+	windowY = (screenSize.height - WINDOW_HEIGHT) / 2;
 
 	startGame();
 
@@ -156,14 +165,15 @@ void kos_Main()
 	{
 		if (gameStarted)
 		{
-			kos_Pause(loopDelay);
+			kos_Pause(LOOP_DELAY);
 
 			bird.move();
 
-			if ((tubeNumber == 1 || tubeNumber == 2) && (tubes[tubeNumber - 1].x < (windowWidth - windowWidth / 3)))
+			//Adding new tubes
+			if ((tubeNumber == 1 || tubeNumber == 2) && (tubes[tubeNumber - 1].x < (WINDOW_WIDTH - WINDOW_WIDTH / 3)))
 				tubes[tubeNumber++].randomize();
 
-			//Process all tubes
+			//Processing all tubes
 			scoreChanged = false;
 			for (int i = 0; i < tubeNumber; ++i)
 			{
@@ -188,7 +198,8 @@ void kos_Main()
 			if (scoreChanged)
 				updateScoreString();
 
-			if (bird.y + bird.sizeY > windowHeight || bird.y < 0)
+			//Cheking the bird is too high or low 
+			if (bird.y + bird.sizeY > WINDOW_HEIGHT || bird.y < 0)
 			{
 				gameStarted = false;
 				continue;
@@ -237,20 +248,21 @@ void kos_Main()
 void drawGameWindow()
 {
 	kos_WindowRedrawStatus(1);
-	kos_DefineAndDrawWindow(windowX, windowY, windowWidth, windowHeight, 0x33, 0x00FFFF, 0, 0, (Dword)header);
+	kos_DefineAndDrawWindow(windowX, windowY, WINDOW_WIDTH, WINDOW_HEIGHT, 0x33, 0x00FFFF, 0, 0, (Dword)HEADER_STRING);
 	bird.draw();
 	for (int i = 0; i < tubeNumber; ++i)
 		tubes[i].draw();
 	kos_WriteTextToWindow(10, 10, 0x81, 0x000000, scoreString, 0);
-	kos_WriteTextToWindow(10, 30, 0x81, 0x000000, controlString, 0);
+	kos_WriteTextToWindow(10, 30, 0x81, 0x000000, CONTROL_STRING, 0);
 	kos_WindowRedrawStatus(2);
 }
 void redrawGameWindow()
 {
 	kos_WindowRedrawStatus(1);
+
+	//cleaning the screen
 	if (scoreChanged)
 		kos_DrawBar(80, 10, 50, 15, 0x00FFFF);
-
 	if (bird.y > bird.prev_y)
 		kos_DrawBar(bird.x, bird.prev_y, bird.sizeX, bird.y - bird.prev_y, 0x00FFFF);
 	else
@@ -261,17 +273,17 @@ void redrawGameWindow()
 		tubes[i].draw();
 
 	kos_WriteTextToWindow(10, 10, 0x81, 0x000000, scoreString, 0);
-	kos_WriteTextToWindow(10, 30, 0x81, 0x000000, controlString, 0);
+	kos_WriteTextToWindow(10, 30, 0x81, 0x000000, CONTROL_STRING, 0);
 	kos_WindowRedrawStatus(2);
 }
 
 void drawGameoverWindow()
 {
 	kos_WindowRedrawStatus(1);
-	kos_DefineAndDrawWindow(windowX, windowY, windowWidth, windowHeight, 0x33, 0x000000, 0, 0, (Dword)header);
-	kos_WriteTextToWindow(125, 50, 0x82, 0xFFFFFF, gameOverString, 0);
+	kos_DefineAndDrawWindow(windowX, windowY, WINDOW_WIDTH, WINDOW_HEIGHT, 0x33, 0x000000, 0, 0, (Dword)HEADER_STRING);
+	kos_WriteTextToWindow(125, 50, 0x82, 0xFFFFFF, GAMEOVER_STRING, 0);
 	kos_WriteTextToWindow(135, 100, 0x81, 0xFFFFFF, scoreString, 0);
-	kos_WriteTextToWindow(50, 150, 0x081, 0xFFFFFF, anyKeyString, 0);
+	kos_WriteTextToWindow(50, 150, 0x081, 0xFFFFFF, ANY_KEY_STRING, 0);
 	kos_WindowRedrawStatus(2);
 }
 
@@ -291,8 +303,7 @@ void updateScoreString()
 {
 	int temp = score;
 	int index = 9;
-	do
-	{
+	do {
 		scoreString[index--] = temp % 10 + 48;
 		temp /= 10;
 	} while (temp > 0);

@@ -1,3 +1,5 @@
+#pragma once
+
 #include <kosSyst.h>
 
 static RGB birdImage[] = {
