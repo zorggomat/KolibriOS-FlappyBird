@@ -108,9 +108,9 @@ void redrawGameWindow();
 void drawGameoverWindow();
 void startGame();
 ScreenSize getScreenSize();
+void updateScoreString();
 inline bool checkAddScore(Tube tube);
 inline bool checkCollision(Tube tube);
-inline void updateScoreString();
 
 //Functions
 
@@ -119,6 +119,7 @@ void startGame()
 	bird.y = windowHeight / 2;
 	bird.acceleration = 0;
 	score = 0;
+	memset((Byte*)scoreString + 6, ' ', 3);
 	updateScoreString();
 	tubeNumber = 1;
 	tubes[0].randomize();
@@ -281,24 +282,18 @@ inline bool checkCollision(Tube tube)
 
 inline bool checkAddScore(Tube tube)
 {
-	int diff = bird.x - (tube.x + tube.width);
-	return diff == 0 || diff == 1;
+	//int diff = bird.x - (tube.x + tube.width);
+	//return diff == 0 || diff == 1;
+	return ((bird.x - (tube.x + tube.width)) >> 1) == 0;
 }
 
-inline void updateScoreString()
+void updateScoreString()
 {
-	//Clear score string
-	for (int i = 6; i <= 8; ++i)
-		scoreString[i] = ' ';
-
-	//Build new string
 	int temp = score;
 	int index = 9;
 	do
 	{
-		int n = temp % 10;
-		scoreString[index] = n + 48;
-		--index;
+		scoreString[index--] = temp % 10 + 48;
 		temp /= 10;
 	} while (temp > 0);
 }
