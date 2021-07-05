@@ -2,18 +2,29 @@
 #include <kosFile.h>
 #include "images.hpp"
 
-//Global const variables
+//Global const strings
 const char HEADER_STRING[] = "Flappy bird";
 const char CONTROL_STRING[] = "SPACEBAR TO JUMP";
 const char GAMEOVER_STRING[] = "GAMEOVER";
 const char ANY_KEY_STRING[] = "Press any key for restart";
+const char SELECT_SPEED_STRING[] = "select the speed of the game";
+const char FAST_STRING[] = "1 FAST";
+const char SLOW_STRING[] = "2 SLOW";
+
+//Global const variables
 const int WINDOW_WIDTH = 400;
 const int WINDOW_HEIGHT = 400;
-const int LOOP_DELAY = 1;
 const int BORDER_TOP = 24;
 const int BORDER_LEFT = 5;
 const int BORDER_RIGHT = 5;
 const int BORDER_DOWN = 5;
+
+enum GameState
+{
+	GAMESTATE_MENU,
+	GAMESTATE_STARTED,
+	GAMESTATE_GAMEOVER
+};
 
 struct ScreenSize
 {
@@ -101,7 +112,8 @@ public:
 };
 
 //Global variables
-bool gameStarted = false;
+int loopDelay;
+GameState gameState;
 char scoreString[] = "Score:    ";
 bool scoreChanged;
 int score;
@@ -113,19 +125,24 @@ int windowY;
 
 //Function prototypes
 void kos_Main();
-void drawGameWindow();
-void redrawGameWindow();
-void drawGameoverWindow();
 void startGame();
 ScreenSize getScreenSize();
 void updateScoreString();
+void WriteBorderedText(Word x, Word y, Byte fontType, Dword textColor, const char* textPtr, Dword textLen, Dword borderColor, int borderSize);
 inline bool checkAddScore(Tube tube);
 inline bool checkCollision(Tube tube);
+
+void drawMenuWindow();
+void drawGameWindow();
+void redrawGameWindow();
+void drawGameoverWindow();
 
 //Functions
 
 void startGame()
 {
+	kos_SetMaskForEvents(0x7); /// 111 in binary
+
 	bird.initialize();
 
 	score = 0;
@@ -135,7 +152,7 @@ void startGame()
 	tubeNumber = 1;
 	tubes[0].randomize();
 
-	gameStarted = true;
+	gameState = GAMESTATE_STARTED;
 	drawGameWindow();
 }
 
@@ -163,13 +180,16 @@ void kos_Main()
 	windowX = (screenSize.width - WINDOW_WIDTH) / 2;
 	windowY = (screenSize.height - WINDOW_HEIGHT) / 2;
 
-	startGame();
+	gameState = GAMESTATE_MENU;
+
+	kos_SetMaskForEvents(0x27); // 100111 in binary
 
 	while( true )
 	{
-		if (gameStarted)
+		switch (gameState)
 		{
-			kos_Pause(LOOP_DELAY);
+		case GAMESTATE_STARTED:
+			kos_Pause(loopDelay);
 
 			bird.move();
 
@@ -189,9 +209,9 @@ void kos_Main()
 				}
 
 				//Check collision with bird
-				if( checkCollision(tubes[i]) )
+				if (checkCollision(tubes[i]))
 				{
-					gameStarted = false;
+					gameState = GAMESTATE_GAMEOVER;
 					continue;
 				}
 
@@ -205,7 +225,7 @@ void kos_Main()
 			//Cheking the bird is too high or low 
 			if (bird.y + bird.sizeY > WINDOW_HEIGHT - (BORDER_TOP + BORDER_DOWN - 1) || bird.y < 0)
 			{
-				gameStarted = false;
+				gameState = GAMESTATE_GAMEOVER;
 				continue;
 			}
 
@@ -227,9 +247,9 @@ void kos_Main()
 			case 3: // button pressed; we have only one button, close
 				kos_ExitApp();
 			}
-		}
-		else
-		{
+			break;
+
+		case GAMESTATE_GAMEOVER:
 			drawGameoverWindow();
 
 			switch (kos_WaitForEvent())
@@ -245,6 +265,69 @@ void kos_Main()
 			case 3:
 				kos_ExitApp();
 			}
+			break;
+
+		case GAMESTATE_MENU:
+			switch (kos_WaitForEvent())
+			{
+			case 1:
+				drawMenuWindow();
+				break;
+
+			case 2:
+				Byte keyCode;
+				kos_GetKey(keyCode);
+				if (keyCode == 0x31 || keyCode == 0x61)	//1 or NumPad1
+				{
+					loopDelay = 1;
+					startGame();
+				}
+				else if (keyCode == 0x32 || keyCode == 0x62) //2 or NumPad2
+				{
+					loopDelay = 2;
+					startGame();
+				}
+				break;
+
+			case 3:
+				kos_ExitApp();
+
+			case 6:
+				Dword result;
+				__asm {
+					push 37 //Function 37 - work with mouse
+					pop eax
+					mov ebx, 3 //Subfunction 3 - states and events of the mouse buttons 
+					int 0x40
+					mov result, eax
+				}
+				result &= 0x100; //bit 8 is set = left button is pressed
+				if ( result )
+				{
+					Dword coordinates;
+					__asm {
+						push 37	//Function 37 - work with mouse
+						pop eax
+						mov ebx, 1 //Subfunction 1 - coordinates of the mouse relative to the window 
+						int		0x40
+						mov coordinates, eax
+					}
+					int clickX = coordinates >> 16;
+					int clickY = coordinates & 0xFFFF;
+					if (clickX >= 100 && clickX < 390 && clickY >= 170 && clickY < 230)
+					{
+						loopDelay = 1;
+						startGame();
+					}
+					else if (clickX >= 100 && clickX < 390 && clickY >= 270 && clickY < 330)
+					{
+						loopDelay = 2;
+						startGame();
+					}
+				}
+				break;
+			}
+			break;
 		}
 	}
 }
@@ -287,7 +370,46 @@ void drawGameoverWindow()
 	kos_DefineAndDrawWindow(windowX, windowY, WINDOW_WIDTH, WINDOW_HEIGHT, 0x33, 0x000000, 0, 0, (Dword)HEADER_STRING);
 	kos_WriteTextToWindow(125, 50, 0x82, 0xFFFFFF, GAMEOVER_STRING, 0);
 	kos_WriteTextToWindow(135, 100, 0x81, 0xFFFFFF, scoreString, 0);
-	kos_WriteTextToWindow(50, 150, 0x081, 0xFFFFFF, ANY_KEY_STRING, 0);
+	kos_WriteTextToWindow(50, 150, 0x81, 0xFFFFFF, ANY_KEY_STRING, 0);
+	kos_WindowRedrawStatus(2);
+}
+
+void WriteBorderedText(Word x, Word y, Byte fontType, Dword textColor, const char *textPtr, Dword textLen, Dword borderColor, int borderSize)
+{
+	kos_WriteTextToWindow(x - borderSize, y - borderSize, fontType, borderColor, textPtr, textLen);
+	kos_WriteTextToWindow(x - borderSize, y + borderSize, fontType, borderColor, textPtr, textLen);
+	kos_WriteTextToWindow(x + borderSize, y - borderSize, fontType, borderColor, textPtr, textLen);
+	kos_WriteTextToWindow(x + borderSize, y + borderSize, fontType, borderColor, textPtr, textLen);
+	kos_WriteTextToWindow(x, y, fontType, textColor, textPtr, textLen);
+}
+
+void drawMenuWindow()
+{
+	kos_WindowRedrawStatus(1);
+	kos_DefineAndDrawWindow(windowX, windowY, WINDOW_WIDTH, WINDOW_HEIGHT, 0x33, 0x00FFFF, 0, 0, (Dword)HEADER_STRING);
+	
+	WriteBorderedText(85, 40, 0x4, 0xFFFFFF, HEADER_STRING, 6, 0x000000, 2);
+	WriteBorderedText(185, 80, 0x84, 0xFFFFFF, HEADER_STRING + 7, 0, 0x000000, 2);
+
+	RGB* pos = &tubeHeadImage[0];
+	for (int x = 100 - 1; x >= 100 - Tube::headHeight; --x)
+		for (int y = 170; y < 170 + Tube::width + 2; ++y)
+		{
+			kos_PutPixel(x, y, (pos->r << 16) + (pos->g << 8) + (pos->b));	//first tube
+			kos_PutPixel(x, y+100, (pos->r << 16) + (pos->g << 8) + (pos->b)); //second tube
+			++pos;
+		}
+
+	//First button
+	for(int x = 100; x < WINDOW_WIDTH - (BORDER_LEFT + BORDER_RIGHT - 1); ++x)
+		kos_PutImage(tubeBodyImage, 1, Tube::width, x, 170);
+	WriteBorderedText(140, 185, 0x82, 0x000000, FAST_STRING, 0, 0xFFFFFF, 1);
+	
+	//Second button
+	for (int x = 100; x < WINDOW_WIDTH - (BORDER_LEFT + BORDER_RIGHT - 1); ++x)
+		kos_PutImage(tubeBodyImage, 1, Tube::width, x, 270);
+	WriteBorderedText(140, 285, 0x82, 0x000000, SLOW_STRING, 0, 0xFFFFFF, 1);
+
 	kos_WindowRedrawStatus(2);
 }
 
