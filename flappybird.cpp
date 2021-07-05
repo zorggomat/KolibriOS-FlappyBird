@@ -10,6 +10,10 @@ const char ANY_KEY_STRING[] = "Press any key for restart";
 const int WINDOW_WIDTH = 400;
 const int WINDOW_HEIGHT = 400;
 const int LOOP_DELAY = 1;
+const int BORDER_TOP = 24;
+const int BORDER_LEFT = 5;
+const int BORDER_RIGHT = 5;
+const int BORDER_DOWN = 5;
 
 struct ScreenSize
 {
@@ -77,8 +81,8 @@ public:
 	void draw()
 	{
 		int offset = x >= 0 ? 0 : -x;
-		int trim = x + width >= WINDOW_WIDTH - 9 ? WINDOW_WIDTH - 9 - x - width : 0;
-		int trimHead = x + width + 2 >= WINDOW_WIDTH - 9 ? WINDOW_WIDTH - 11 - x - width : 0;
+		int trim = x + width >= WINDOW_WIDTH - (BORDER_LEFT + BORDER_RIGHT - 1) ? WINDOW_WIDTH - x - width - (BORDER_LEFT + BORDER_RIGHT - 1) : 0;
+		int trimHead = x + width + 2 >= WINDOW_WIDTH - (BORDER_LEFT + BORDER_RIGHT - 1) ? WINDOW_WIDTH - x - width - 2 - (BORDER_LEFT + BORDER_RIGHT - 1) : 0;
 
 		//top
 		for (int y = 0; y < gapY - headHeight; ++y)
@@ -90,7 +94,7 @@ public:
 		for (int y = gapY + gapHeight; y < gapY + gapHeight + headHeight; ++y)
 			kos_PutImage(tubeHeadImage + (width + 2) * (y - (gapY + gapHeight)) + offset, (width + 2) - offset + trimHead, 1, x + offset, y);
 		//down
-		for (int y = gapY + gapHeight + headHeight; y < WINDOW_HEIGHT - 28; ++y)
+		for (int y = gapY + gapHeight + headHeight; y < WINDOW_HEIGHT - (BORDER_TOP + BORDER_DOWN - 1); ++y)
 			kos_PutImage(tubeBodyImage + offset, width - offset + trim, 1, x + offset, y);
 
 	}
@@ -199,7 +203,7 @@ void kos_Main()
 				updateScoreString();
 
 			//Cheking the bird is too high or low 
-			if (bird.y + bird.sizeY > WINDOW_HEIGHT || bird.y < 0)
+			if (bird.y + bird.sizeY > WINDOW_HEIGHT - (BORDER_TOP + BORDER_DOWN - 1) || bird.y < 0)
 			{
 				gameStarted = false;
 				continue;
@@ -304,7 +308,7 @@ void updateScoreString()
 	int temp = score;
 	int index = 9;
 	do {
-		scoreString[index--] = temp % 10 + 48;
+		scoreString[index--] = temp % 10 + '0';
 		temp /= 10;
 	} while (temp > 0);
 }
