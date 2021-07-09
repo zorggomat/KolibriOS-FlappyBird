@@ -35,8 +35,8 @@ struct ScreenSize
 class Bird
 {
 public:
-	static const int sizeX = 18;
-	static const int sizeY = 18;
+	static const int sizeX = 19;
+	static const int sizeY = 20;
 	static const int x = 100;
 	int prev_y;
 	int y;
